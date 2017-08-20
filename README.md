@@ -80,6 +80,8 @@ DB_HANDLE get key
 DB_HANDLE put key value ?-sync BOOLEAN?  
 DB_HANDLE delete key  
 DB_HANDLE exists key  
+DB_HANDLE write BAT_HANDLE  
+DB_HANDLE batch  
 DB_HANDLE iterator  
 DB_HANDLE close  
 IT_HANDLE seektofirst  
@@ -91,11 +93,17 @@ IT_HANDLE prev
 IT_HANDLE key  
 IT_HANDLE value  
 IT_HANDLE close  
+BAT_HANDLE put key value  
+BAT_HANDLE delete key  
+BAT_HANDLE close  
 
 The command `rocksdb open` create a database handle. -path option is the path 
 of the database to open.
 
 `DB_HANDLE iterator` create an Iterator handle.
+
+`DB_HANDLE batch` create a WriteBatch handle. Users can use `DB_HANDLE write`
+to apply a set of updates.
 
 
 Examples
@@ -124,4 +132,28 @@ A basic example:
     }
     $it close
     $dbi close
+
+WriteBatch example:
+
+    package require rocksdb
+
+    set dbi [rocksdb open -path "./testdb" -create_if_missing 1]
+    set bat [$dbi batch]
+    $bat put "test1" "1234567890"
+    $bat put "test2" "2345678901"
+    $bat put "test3" "3456789010"
+    $bat put "test4" "4567890102"
+    $bat put "test5" "5678901023"
+    $dbi write $bat
+    $bat close
+
+    set it [$dbi iterator]
+    for {$it seektofirst} {[$it valid] == 1} {$it next} {
+        set key [$it key]
+        set value [$it value]
+        puts "Iterator --- I get $key: $value"
+    }
+    $it close
+    $dbi close
+
 

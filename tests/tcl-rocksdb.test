@@ -149,14 +149,40 @@ test rocksdb-2.17 {Iteration close} {*}{
     -result {0}
 }
 
-test rocksdb-2.18 {Close} {*}{
+test rocksdb-2.18 {Create a WrireBatch} {*}{
+    -body {
+    rocksdbi0 batch
+    }
+    -result {rocksbat0}
+}
+
+test rocksdb-2.19 {Write a WrireBatch} {*}{
+    -body {
+    rocksbat0 put "test1" "1234567890"
+    rocksbat0 put "test2" "2345678901"
+    rocksbat0 put "test3" "3456789012"
+    rocksbat0 put "test4" "4567890123"
+    rocksbat0 put "test5" "5678901234"
+    rocksdbi0 write rocksbat0
+    }
+    -result {0}
+}
+
+test rocksdb-2.20 {Close a WrireBatch} {*}{
+    -body {
+    rocksbat0 close
+    }
+    -result {0}
+}
+
+test rocksdb-2.21 {Close} {*}{
     -body {
     rocksdbi0 close
     }
     -result {0}
 }
 
-test rocksdb-2.19 {Open with read only} {*}{
+test rocksdb-2.22 {Open with read only} {*}{
     -body {
     rocksdb open -path "./rocksdbtest" -readonly 1
     }

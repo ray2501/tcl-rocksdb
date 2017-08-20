@@ -33,6 +33,7 @@ typedef struct ThreadSpecificData {
   Tcl_HashTable *rocksdb_hashtblPtr; /* per thread hash table. */
   int dbi_count;
   int itr_count;
+  int bat_count;
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -49,6 +50,140 @@ void ROCKSDB_Thread_Exit(ClientData clientdata)
     Tcl_DeleteHashTable(tsdPtr->rocksdb_hashtblPtr);
     ckfree(tsdPtr->rocksdb_hashtblPtr);
   }
+}
+
+
+static int ROCKSDB_BAT(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
+  int choice;
+  rocksdb::WriteBatch* batch;
+  Tcl_HashEntry *hashEntryPtr;
+  char *batHandle;
+
+  ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
+      Tcl_GetThreadData(&dataKey, sizeof(ThreadSpecificData));
+
+  if (tsdPtr->initialized == 0) {
+    tsdPtr->initialized = 1;
+    tsdPtr->rocksdb_hashtblPtr = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
+    Tcl_InitHashTable(tsdPtr->rocksdb_hashtblPtr, TCL_STRING_KEYS);
+  }
+  static const char *BAT_strs[] = {
+    "put",
+    "delete",
+    "close",
+    0
+  };
+
+  enum BAT_enum {
+    BAT_PUT,
+    BAT_DELETE,
+    BAT_CLOSE,
+  };
+
+  if( objc < 2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SUBCOMMAND ...");
+    return TCL_ERROR;
+  }
+
+  if( Tcl_GetIndexFromObj(interp, objv[1], BAT_strs, "option", 0, &choice) ){
+    return TCL_ERROR;
+  }
+
+  /*
+   * Get the rocksdb::WriteBatch value
+   */
+  batHandle = Tcl_GetStringFromObj(objv[0], 0);
+  hashEntryPtr = Tcl_FindHashEntry( tsdPtr->rocksdb_hashtblPtr, batHandle );
+  if( !hashEntryPtr ) {
+    if( interp ) {
+        Tcl_Obj *resultObj = Tcl_GetObjResult( interp );
+
+        Tcl_AppendStringsToObj( resultObj, "invalid batch handle ", batHandle, (char *)NULL );
+    }
+
+    return TCL_ERROR;
+  }
+
+  batch = (rocksdb::WriteBatch *)(uintptr_t)Tcl_GetHashValue( hashEntryPtr );
+
+  switch( (enum BAT_enum)choice ){
+
+    case BAT_PUT: {
+      char *key;
+      char *data;
+      int key_len;
+      int data_len;
+      std::string key2;
+      std::string value2;
+
+      if( objc < 4 || (objc&1)!=0) {
+        Tcl_WrongNumArgs(interp, 2, objv, "key data ");
+        return TCL_ERROR;
+      }
+
+      key = Tcl_GetStringFromObj(objv[2], &key_len);
+      if( !key || key_len < 1 ){
+         Tcl_AppendResult(interp, "Error: key is an empty key ", (char*)0);
+         return TCL_ERROR;
+      }
+
+      data = Tcl_GetStringFromObj(objv[3], &data_len);
+      if( !data || data_len < 1 ){
+         Tcl_AppendResult(interp, "Error: data is an empty value ", (char*)0);
+         return TCL_ERROR;
+      }
+
+      key2 = key;
+      value2 = data;
+      batch->Put(key2, value2);
+      Tcl_SetObjResult(interp, Tcl_NewIntObj( 0 ));
+
+      break;
+    }
+
+    case BAT_DELETE: {
+      char *key;
+      int key_len;
+      std::string key2;
+
+      if( objc < 3 || (objc&1)!=1) {
+        Tcl_WrongNumArgs(interp, 2, objv, "key ");
+        return TCL_ERROR;
+      }
+
+      key = Tcl_GetStringFromObj(objv[2], &key_len);
+      if( !key || key_len < 1 ){
+         Tcl_AppendResult(interp, "Error: key is an empty key ", (char*)0);
+         return TCL_ERROR;
+      }
+
+      key2 = key;
+      batch->Delete(key2);
+      Tcl_SetObjResult(interp, Tcl_NewIntObj( 0 ));
+
+      break;
+    }
+
+    case BAT_CLOSE: {
+      if( objc != 2 ){
+        Tcl_WrongNumArgs(interp, 2, objv, 0);
+        return TCL_ERROR;
+      }
+
+      delete batch;
+
+      Tcl_MutexLock(&myMutex);
+      if( hashEntryPtr )  Tcl_DeleteHashEntry(hashEntryPtr);
+      Tcl_MutexUnlock(&myMutex);
+
+      Tcl_DeleteCommand(interp, batHandle);
+      Tcl_SetObjResult(interp, Tcl_NewIntObj( 0 ));
+
+      break;
+    }
+  }
+
+  return TCL_OK;
 }
 
 
@@ -322,6 +457,8 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
     "put",
     "delete",
     "exists",
+    "write",
+    "batch",
     "iterator",
     "close",
     0
@@ -332,6 +469,8 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
     DBI_PUT,
     DBI_DELETE,
     DBI_EXISTS,
+    DBI_WRITE,
+    DBI_BATCH,
     DBI_ITERATOR,
     DBI_CLOSE,
   };
@@ -514,6 +653,73 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
       } else {
           Tcl_SetObjResult(interp, Tcl_NewBooleanObj( 0 ));
       }
+
+      break;
+    }
+
+    case DBI_WRITE: {
+      rocksdb::WriteBatch *batch;
+      rocksdb::Status status;
+      Tcl_HashEntry *hashEntryPtr;
+      const char *batch_handle = NULL;
+      int length = 0;
+
+      if( objc != 3 ) {
+        Tcl_WrongNumArgs(interp, 2, objv, "batch_handle ");
+        return TCL_ERROR;
+      }
+
+      batch_handle = Tcl_GetStringFromObj(objv[2], &length);
+      hashEntryPtr = Tcl_FindHashEntry( tsdPtr->rocksdb_hashtblPtr, batch_handle );
+      if( !hashEntryPtr ) {
+        if( interp ) {
+            Tcl_Obj *resultObj = Tcl_GetObjResult( interp );
+
+            Tcl_AppendStringsToObj( resultObj, "invalid batch handle ", batch_handle, (char *)NULL );
+        }
+
+        return TCL_ERROR;
+      }
+
+      batch = (rocksdb::WriteBatch *)(uintptr_t)Tcl_GetHashValue( hashEntryPtr );
+      status = db->Write(rocksdb::WriteOptions(), batch);
+      if(!status.ok()) {
+        Tcl_AppendResult(interp, "Error: write failed", (char*)0);
+        return TCL_ERROR;
+      }
+
+      Tcl_SetObjResult(interp, Tcl_NewIntObj( 0 ));
+
+      break;
+    }
+
+    case DBI_BATCH: {
+      rocksdb::WriteBatch *batch;
+      Tcl_HashEntry *newHashEntryPtr;
+      char handleName[16 + TCL_INTEGER_SPACE];
+      Tcl_Obj *pResultStr = NULL;
+      int newvalue;
+
+      if( objc != 2 ) {
+        Tcl_WrongNumArgs(interp, 2, objv, 0);
+        return TCL_ERROR;
+      }
+
+      batch = new rocksdb::WriteBatch();
+
+      Tcl_MutexLock(&myMutex);
+      sprintf( handleName, "rocksbat%d", tsdPtr->bat_count++ );
+
+      pResultStr = Tcl_NewStringObj( handleName, -1 );
+
+      newHashEntryPtr = Tcl_CreateHashEntry(tsdPtr->rocksdb_hashtblPtr, handleName, &newvalue);
+      Tcl_SetHashValue(newHashEntryPtr, (ClientData)(uintptr_t) batch);
+      Tcl_MutexUnlock(&myMutex);
+
+      Tcl_CreateObjCommand(interp, handleName, (Tcl_ObjCmdProc *) ROCKSDB_BAT,
+          (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+      Tcl_SetObjResult(interp, pResultStr);
 
       break;
     }
@@ -833,6 +1039,7 @@ Rocksdb_Init(Tcl_Interp *interp)
 
         tsdPtr->dbi_count = 0;
         tsdPtr->itr_count = 0;
+        tsdPtr->bat_count = 0;
     }
     Tcl_MutexUnlock(&myMutex);
 
