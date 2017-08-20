@@ -1,0 +1,9 @@
+2017-08-20  Danilo Chang
+
+     * Add basic function: put/get/delete/exists
+     * Implement rocksdb command
+
+2017-08-19  Danilo Chang
+
+     * Dump sample extension
+

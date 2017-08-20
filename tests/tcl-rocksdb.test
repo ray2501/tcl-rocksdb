@@ -1,0 +1,173 @@
+# tcl-rocksdb.test --
+#
+#	Tests for tcl-rocksdb
+#------------------------------------------------------------------------------
+
+lappend auto_path .
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+loadTestedCommands
+package require rocksdb
+
+#-------------------------------------------------------------------------------
+
+test rocksdb-1.1 {Test rocksdb command, wrong # args} {*}{
+    -body {
+    rocksdb
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+
+#-------------------------------------------------------------------------------
+
+
+test rocksdb-2.1 {Open a database, wrong # args} {*}{
+    -body {
+    rocksdb open -path
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test rocksdb-2.2 {Open a database} {*}{
+    -body {
+    rocksdb open -path "./rocksdbtest" -create_if_missing 1
+    }
+    -result {rocksdbi0}
+}
+
+test rocksdb-2.3 {Put, wrong # args} {*}{
+    -body {
+    rocksdbi0 put "1234" "567890" -sync
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test rocksdb-2.4 {Put} {*}{
+    -body {
+    rocksdbi0 put "1234" "567890"
+    }
+    -result {0}
+}
+
+test rocksdb-2.5 {Get} {*}{
+    -body {
+    rocksdbi0 get "1234"
+    }
+    -result {567890}
+}
+
+test rocksdb-2.6 {Put Sync} {*}{
+    -body {
+    rocksdbi0 put "5678" "RocksDB and Tcl" -sync 1
+    }
+    -result {0}
+}
+
+test rocksdb-2.7 {Delete} {*}{
+    -body {
+    rocksdbi0 delete "1234" 
+    }
+    -result {0}
+}
+
+test rocksdb-2.8 {Exists} {*}{
+    -body {
+    rocksdbi0 exists "5678"
+    }
+    -result {1}
+}
+
+test rocksdb-2.9 {Iteration create} {*}{
+    -body {
+    rocksdbi0 iterator
+    }
+    -result {rocksitr0}
+}
+
+test rocksdb-2.10 {Iteration seektofirst} {*}{
+    -body {
+    rocksitr0 seektofirst
+    }
+    -result {0}
+}
+
+test rocksdb-2.11 {Iteration valid} {*}{
+    -body {
+    rocksitr0 valid
+    }
+    -result {1}
+}
+
+test rocksdb-2.12 {Iteration seek} {*}{
+    -body {
+    rocksitr0 seek "5678"
+    }
+    -result {0}
+}
+
+test rocksdb-2.13 {Iteration key} {*}{
+    -body {
+    rocksitr0 key
+    }
+    -result {5678}
+}
+
+test rocksdb-2.14 {Iteration value} {*}{
+    -body {
+    rocksitr0 value
+    }
+    -result {RocksDB and Tcl}
+}
+
+test rocksdb-2.15 {Iteration next} {*}{
+    -body {
+    rocksitr0 next
+    }
+    -result {0}
+}
+
+test rocksdb-2.16 {Iteration valid} {*}{
+    -body {
+    rocksitr0 valid
+    }
+    -result {0}
+}
+
+test rocksdb-2.17 {Iteration close} {*}{
+    -body {
+    rocksitr0 close
+    }
+    -result {0}
+}
+
+test rocksdb-2.18 {Close} {*}{
+    -body {
+    rocksdbi0 close
+    }
+    -result {0}
+}
+
+test rocksdb-2.19 {Open with read only} {*}{
+    -body {
+    rocksdb open -path "./rocksdbtest" -readonly 1
+    }
+    -result {rocksdbi1}
+}
+
+#-------------------------------------------------------------------------------
+
+catch {rocksdbi1 close}
+
+removeDirectory "./rocksdbtest"
+
+cleanupTests
+return
