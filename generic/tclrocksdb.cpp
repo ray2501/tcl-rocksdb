@@ -833,8 +833,9 @@ static int ROCKSDB_MAIN(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*ob
           Tcl_WrongNumArgs(interp, 2, objv,
           "-path path ?-readonly BOOLEAN? ?-create_if_missing BOOLEAN? \
            ?-error_if_exists BOOLEAN? ?-paranoid_checks BOOLEAN? \
-           ?-write_buffer_size size? ?-max_write_buffer_number number? \
-           ?-target_file_size_base size? ?-max_open_files number? "
+           ?-use_fsync BOOLEAN? ?-write_buffer_size size? \
+           ?-max_write_buffer_number number? ?-target_file_size_base size? \
+           ?-max_open_files number? ?-compression type? "
           );
 
         return TCL_ERROR;
@@ -880,6 +881,14 @@ static int ROCKSDB_MAIN(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*ob
             }else{
               options.paranoid_checks = false;
             }
+        } else if( strcmp(zArg, "-use_fsync")==0 ){
+            int b;
+            if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+            if( b ){
+              options.use_fsync = true;
+            }else{
+              options.use_fsync = false;
+            }
         } else if( strcmp(zArg, "-write_buffer_size")==0 ){
             int size = 0;
 
@@ -921,6 +930,30 @@ static int ROCKSDB_MAIN(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*ob
                 options.max_open_files = -1;
             } else {
                 options.max_open_files = number;
+            }
+        } else if( strcmp(zArg, "-compression")==0 ){
+            const char *compression = NULL;
+            int clength = 0;
+
+            compression = Tcl_GetStringFromObj(objv[i+1], &clength);
+            if(!compression || clength <= 0) {
+                return TCL_ERROR;
+            }
+
+            if(!strcmp("no", compression)) {
+                options.compression = rocksdb::kNoCompression;
+            } else if(!strcmp("snappy", compression)) {
+                options.compression = rocksdb::kSnappyCompression;
+            } else if(!strcmp("zlib", compression)) {
+                options.compression = rocksdb::kZlibCompression;
+            } else if(!strcmp("bzip2", compression)) {
+                options.compression = rocksdb::kBZip2Compression;
+            } else if(!strcmp("lz4", compression)) {
+                options.compression = rocksdb::kLZ4Compression;
+            } else if(!strcmp("lz4hc", compression)) {
+                options.compression = rocksdb::kLZ4HCCompression;
+            } else {
+                return TCL_ERROR;
             }
         } else{
            Tcl_AppendResult(interp, "unknown option: ", zArg, (char*)0);

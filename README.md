@@ -73,9 +73,10 @@ for the major, minor and patch levels of the RocksDB release.
 
 ### Database
 rocksdb open -path path ?-readonly BOOLEAN? ?-create_if_missing BOOLEAN? 
- ?-error_if_exists BOOLEAN? ?-paranoid_checks BOOLEAN? ?-write_buffer_size size? 
+ ?-error_if_exists BOOLEAN? ?-paranoid_checks BOOLEAN? 
+ ?-use_fsync BOOLEAN? ?-write_buffer_size size? 
  ?-max_write_buffer_number number? ?-target_file_size_base size? 
- ?-max_open_files number?  
+ ?-max_open_files number? ?-compression type?   
 DB_HANDLE get key  
 DB_HANDLE put key value ?-sync BOOLEAN?  
 DB_HANDLE delete key  
@@ -99,6 +100,7 @@ BAT_HANDLE close
 
 The command `rocksdb open` create a database handle. -path option is the path 
 of the database to open.
+-compression type supports "no", "snappy", "zlib", "bzip2", "lz4" and "lz4hc".
 
 `DB_HANDLE iterator` create an Iterator handle.
 
