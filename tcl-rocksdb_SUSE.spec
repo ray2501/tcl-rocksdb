@@ -4,7 +4,7 @@
 
 Name:          tcl-rocksdb
 Summary:       Tcl interface for RocksDB
-Version:       0.1
+Version:       0.1.1
 Release:       1
 License:       Apache License, Version 2.0
 Group:         Development/Libraries/Tcl
@@ -13,8 +13,8 @@ URL:           https://github.com/ray2501/tcl-rocksdb
 BuildRequires: autoconf
 BuildRequires: make
 BuildRequires: librocksdb-devel
-BuildRequires: tcl-devel >= 8.4
-Requires:      tcl >= 8.4
+BuildRequires: tcl-devel >= 8.5
+Requires:      tcl >= 8.5
 BuildRoot:     %{buildroot}
 
 %description
