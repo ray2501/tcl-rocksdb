@@ -460,6 +460,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
     "write",
     "batch",
     "iterator",
+    "getName",
     "getProperty",
     "close",
     0
@@ -473,6 +474,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
     DBI_WRITE,
     DBI_BATCH,
     DBI_ITERATOR,
+    DBI_GETNAME,
     DBI_GETPROPERTY,
     DBI_CLOSE,
   };
@@ -750,6 +752,22 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
       Tcl_CreateObjCommand(interp, handleName, (Tcl_ObjCmdProc *) ROCKSDB_ITR,
           (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
+      Tcl_SetObjResult(interp, pResultStr);
+
+      break;
+    }
+
+    case DBI_GETNAME: {
+      std::string name;
+      Tcl_Obj *pResultStr = NULL;
+
+      if( objc != 2 ){
+        Tcl_WrongNumArgs(interp, 2, objv, 0);
+        return TCL_ERROR;
+      }
+
+      name = db->GetName();
+      pResultStr = Tcl_NewStringObj(name.c_str(), name.length());
       Tcl_SetObjResult(interp, pResultStr);
 
       break;

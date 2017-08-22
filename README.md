@@ -84,6 +84,7 @@ DB_HANDLE exists key
 DB_HANDLE write BAT_HANDLE  
 DB_HANDLE batch  
 DB_HANDLE iterator  
+DB_HANDLE getName  
 DB_HANDLE getProperty property  
 DB_HANDLE close  
 IT_HANDLE seektofirst  
@@ -107,6 +108,9 @@ of the database to open.
 
 `DB_HANDLE batch` create a WriteBatch handle. Users can use `DB_HANDLE write`
 to apply a set of updates.
+
+`DB_HANDLE getName` can get the exact same name that was provided as
+an argument (-path) to open DB.
 
 `DB_HANDLE getProperty` can get DB export properties about their state via
 this method.  If it is a valid property, returns its current value.
