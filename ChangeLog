@@ -1,5 +1,7 @@
 2017-08-22  Danilo Chang
 
+     * Bump version to v0.2
+     * Fix openSUSE spec: setup CC to g++
      * Add database repair/destroy command
      * Add getProperty/getName/getApproximateSizes implement
 

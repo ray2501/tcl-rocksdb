@@ -4,7 +4,7 @@
 
 Name:          tcl-rocksdb
 Summary:       Tcl interface for RocksDB
-Version:       0.1.1
+Version:       0.2
 Release:       1
 License:       Apache License, Version 2.0
 Group:         Development/Libraries/Tcl
@@ -32,6 +32,7 @@ database files from Tcl.
 %setup -q -n %{name}-%{version}
 
 %build
+export CC=g++
 ./configure \
 	--prefix=%{directory} \
 	--exec-prefix=%{directory} \
