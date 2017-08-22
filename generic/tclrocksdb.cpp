@@ -460,6 +460,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
     "write",
     "batch",
     "iterator",
+    "getProperty",
     "close",
     0
   };
@@ -472,6 +473,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
     DBI_WRITE,
     DBI_BATCH,
     DBI_ITERATOR,
+    DBI_GETPROPERTY,
     DBI_CLOSE,
   };
 
@@ -581,7 +583,6 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
            return TCL_ERROR;
         }
       }
-
 
       key2 = key;
       value2 = data;
@@ -754,6 +755,38 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
       break;
     }
 
+    case DBI_GETPROPERTY: {
+      const char *key = NULL;
+      int key_len = 0;
+      rocksdb::Slice property;
+      std::string value2;
+      bool result;
+      Tcl_Obj *pResultStr = NULL;
+
+      if( objc != 3 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "property ");
+        return TCL_ERROR;
+      }
+
+      key = Tcl_GetStringFromObj(objv[2], &key_len);
+      if( !key || key_len < 1 ){
+         Tcl_AppendResult(interp, "Error: key is an empty key ", (char*)0);
+         return TCL_ERROR;
+      }
+
+      property = rocksdb::Slice(key, key_len);
+      result = db->GetProperty(property, &value2);
+
+      if(!result) {
+         Tcl_AppendResult(interp, "Error: is not a valid property ", (char*)0);
+         return TCL_ERROR;
+      }
+
+      pResultStr = Tcl_NewStringObj(value2.c_str(), value2.length());
+      Tcl_SetObjResult(interp, pResultStr);
+      break;
+    }
+
     case DBI_CLOSE: {
       if( objc != 2 ){
         Tcl_WrongNumArgs(interp, 2, objv, 0);
@@ -846,7 +879,7 @@ static int ROCKSDB_MAIN(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*ob
 
         if( strcmp(zArg, "-path")==0 ){
             path = Tcl_GetStringFromObj(objv[i+1], &len);
-            if(!path || len < 0) {
+            if(!path || len < 1) {
                 return TCL_ERROR;
             }
         } else if( strcmp(zArg, "-readonly")==0 ){

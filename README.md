@@ -84,6 +84,7 @@ DB_HANDLE exists key
 DB_HANDLE write BAT_HANDLE  
 DB_HANDLE batch  
 DB_HANDLE iterator  
+DB_HANDLE getProperty property  
 DB_HANDLE close  
 IT_HANDLE seektofirst  
 IT_HANDLE seektolast  
@@ -106,6 +107,12 @@ of the database to open.
 
 `DB_HANDLE batch` create a WriteBatch handle. Users can use `DB_HANDLE write`
 to apply a set of updates.
+
+`DB_HANDLE getProperty` can get DB export properties about their state via
+this method.  If it is a valid property, returns its current value.
+
+property: "rocksdb.stats" - returns a multi-line string containing the data
+described statistics about the internal operation of the DB.
 
 
 Examples
