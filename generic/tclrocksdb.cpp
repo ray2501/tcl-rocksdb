@@ -788,7 +788,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
 
       key = Tcl_GetStringFromObj(objv[2], &key_len);
       if( !key || key_len < 1 ){
-         Tcl_AppendResult(interp, "Error: key is an empty key ", (char*)0);
+         Tcl_AppendResult(interp, "Error: property is an empty string ", (char*)0);
          return TCL_ERROR;
       }
 
@@ -802,6 +802,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
 
       pResultStr = Tcl_NewStringObj(value2.c_str(), value2.length());
       Tcl_SetObjResult(interp, pResultStr);
+
       break;
     }
 
