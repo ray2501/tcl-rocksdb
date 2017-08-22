@@ -460,6 +460,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
     "write",
     "batch",
     "iterator",
+    "getApproximateSizes",
     "getName",
     "getProperty",
     "close",
@@ -474,6 +475,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
     DBI_WRITE,
     DBI_BATCH,
     DBI_ITERATOR,
+    DBI_GETAPPROXIMATESIZES,
     DBI_GETNAME,
     DBI_GETPROPERTY,
     DBI_CLOSE,
@@ -757,6 +759,45 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
       break;
     }
 
+    case DBI_GETAPPROXIMATESIZES: {
+      const char *start = NULL;
+      int start_len = 0;
+      const char *limit = NULL;
+      int limit_len = 0;
+      rocksdb::Slice start2;
+      rocksdb::Slice limit2;
+      uint64_t sizes;
+      Tcl_Obj *pResultStr = NULL;
+
+      if( objc != 4 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "start limit ");
+        return TCL_ERROR;
+      }
+
+      start = Tcl_GetStringFromObj(objv[2], &start_len);
+      if( !start || start_len < 1 ){
+         Tcl_AppendResult(interp, "Error: start is an empty string ", (char*)0);
+         return TCL_ERROR;
+      }
+
+      limit = Tcl_GetStringFromObj(objv[3], &limit_len);
+      if( !limit || limit_len < 1 ){
+         Tcl_AppendResult(interp, "Error: limit is an empty string ", (char*)0);
+         return TCL_ERROR;
+      }
+
+      start2 = rocksdb::Slice(start, start_len);
+      limit2 = rocksdb::Slice(limit, limit_len);
+
+      rocksdb::Range ranges = rocksdb::Range(start2, limit2);
+      db->GetApproximateSizes(&ranges, 1, &sizes);
+
+      pResultStr = Tcl_NewWideIntObj( (Tcl_WideInt) sizes);
+      Tcl_SetObjResult(interp, pResultStr);
+
+      break;
+    }
+
     case DBI_GETNAME: {
       std::string name;
       Tcl_Obj *pResultStr = NULL;
@@ -843,12 +884,16 @@ static int ROCKSDB_MAIN(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*ob
 
   static const char *DB_strs[] = {
     "open",
+    "repair",
+    "destroy",
     "version",
     0
   };
 
   enum DB_enum {
     DB_OPEN,
+    DB_REPAIR,
+    DB_DESTROY,
     DB_VERSION,
   };
 
@@ -1051,6 +1096,78 @@ static int ROCKSDB_MAIN(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*ob
           (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
       Tcl_SetObjResult(interp, pResultStr);
+
+      break;
+    }
+
+    case DB_REPAIR: {
+      rocksdb::Options options;
+      rocksdb::Status status;
+      const char *name;
+      int name_len = 0;
+      std::string name2;
+
+      if( objc != 3){
+        Tcl_WrongNumArgs(interp, 2, objv, "name ");
+        return TCL_ERROR;
+      }
+
+      name = Tcl_GetStringFromObj(objv[2], &name_len);
+      if(!name || name_len < 1) {
+          return TCL_ERROR;
+      }
+
+      name2 = name;
+
+      /*
+       * TODO:
+       * I don't know how to test this method, so this method does not test actually.
+       */
+      status = rocksdb::RepairDB(name2, options);
+      if(!status.ok()) {
+          if( interp ) {
+            Tcl_Obj *resultObj = Tcl_GetObjResult( interp );
+            Tcl_AppendStringsToObj( resultObj, "ERROR: repair failed", (char *)NULL );
+          }
+
+          return TCL_ERROR;
+      }
+
+      Tcl_SetObjResult(interp, Tcl_NewIntObj( 0 ));
+
+      break;
+    }
+
+    case DB_DESTROY: {
+      rocksdb::Options options;
+      rocksdb::Status status;
+      const char *name;
+      int name_len = 0;
+      std::string name2;
+
+      if( objc != 3){
+        Tcl_WrongNumArgs(interp, 2, objv, "name ");
+        return TCL_ERROR;
+      }
+
+      name = Tcl_GetStringFromObj(objv[2], &name_len);
+      if(!name || name_len < 1) {
+          return TCL_ERROR;
+      }
+
+      name2 = name;
+
+      status = rocksdb::DestroyDB(name2, options);
+      if(!status.ok()) {
+          if( interp ) {
+            Tcl_Obj *resultObj = Tcl_GetObjResult( interp );
+            Tcl_AppendStringsToObj( resultObj, "ERROR: destroy failed", (char *)NULL );
+          }
+
+          return TCL_ERROR;
+      }
+
+      Tcl_SetObjResult(interp, Tcl_NewIntObj( 0 ));
 
       break;
     }

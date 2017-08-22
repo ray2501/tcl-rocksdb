@@ -189,11 +189,15 @@ test rocksdb-2.22 {Open with read only} {*}{
     -result {rocksdbi1}
 }
 
+test rocksdb-2.23 {Close and Destroy} {*}{
+    -body {
+    rocksdbi1 close
+    rocksdb destroy "./rocksdbtest"
+    }
+    -result {0}
+}
+
 #-------------------------------------------------------------------------------
-
-catch {rocksdbi1 close}
-
-removeDirectory "./rocksdbtest"
 
 cleanupTests
 return

@@ -1,6 +1,7 @@
 2017-08-22  Danilo Chang
 
-     * Add getProperty/getName implement
+     * Add database repair/destroy command
+     * Add getProperty/getName/getApproximateSizes implement
 
 2017-08-21  Danilo Chang
 
