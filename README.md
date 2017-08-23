@@ -79,9 +79,9 @@ rocksdb open -path path ?-readonly BOOLEAN? ?-create_if_missing BOOLEAN?
  ?-max_open_files number? ?-compression type?   
 rocksdb repair name  
 rocksdb destroy name  
-DB_HANDLE get key  
+DB_HANDLE get key ?-fillCache BOOLEAN?  
 DB_HANDLE put key value ?-sync BOOLEAN?  
-DB_HANDLE delete key  
+DB_HANDLE delete key ?-sync BOOLEAN?  
 DB_HANDLE exists key  
 DB_HANDLE write BAT_HANDLE  
 DB_HANDLE batch  

@@ -109,12 +109,12 @@ static int ROCKSDB_BAT(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
   switch( (enum BAT_enum)choice ){
 
     case BAT_PUT: {
-      char *key;
-      char *data;
-      int key_len;
-      int data_len;
-      std::string key2;
-      std::string value2;
+      const char *key = NULL;
+      const char *data = NULL;
+      int key_len = 0;
+      int data_len = 0;
+      rocksdb::Slice key2;
+      rocksdb::Slice value2;
 
       if( objc < 4 || (objc&1)!=0) {
         Tcl_WrongNumArgs(interp, 2, objv, "key data ");
@@ -133,8 +133,8 @@ static int ROCKSDB_BAT(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
          return TCL_ERROR;
       }
 
-      key2 = key;
-      value2 = data;
+      key2 = rocksdb::Slice(key, key_len);
+      value2 = rocksdb::Slice(data, data_len);
       batch->Put(key2, value2);
       Tcl_SetObjResult(interp, Tcl_NewIntObj( 0 ));
 
@@ -142,9 +142,9 @@ static int ROCKSDB_BAT(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
     }
 
     case BAT_DELETE: {
-      char *key;
-      int key_len;
-      std::string key2;
+      const char *key = NULL;
+      int key_len = 0;
+      rocksdb::Slice key2;
 
       if( objc < 3 || (objc&1)!=1) {
         Tcl_WrongNumArgs(interp, 2, objv, "key ");
@@ -157,7 +157,7 @@ static int ROCKSDB_BAT(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
          return TCL_ERROR;
       }
 
-      key2 = key;
+      key2 = rocksdb::Slice(key, key_len);
       batch->Delete(key2);
       Tcl_SetObjResult(interp, Tcl_NewIntObj( 0 ));
 
@@ -510,15 +510,18 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
   switch( (enum DBI_enum)choice ){
 
     case DBI_GET: {
+      rocksdb::ReadOptions read_options;
       rocksdb::Status status;
-      char *key;
-      int key_len;
-      std::string key2;
+      const char *key = NULL;
+      int key_len = 0;
+      rocksdb::Slice key2;
       std::string value2;
+      char *zArg;
+      int i = 0;
       Tcl_Obj *pResultStr = NULL;
 
       if( objc < 3 || (objc&1)!=1) {
-        Tcl_WrongNumArgs(interp, 2, objv, "key ");
+        Tcl_WrongNumArgs(interp, 2, objv, "key ?-fillCache BOOLEAN? ");
         return TCL_ERROR;
       }
 
@@ -528,9 +531,26 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
          return TCL_ERROR;
       }
 
-      key2 = key;
+      for(i=3; i+1<objc; i+=2){
+        zArg = Tcl_GetStringFromObj(objv[i], 0);
+        if( strcmp(zArg, "-fillCache")==0 ){
+            int b;
+            if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+            if( b ){
+              read_options.fill_cache = true;
+            }else{
+              read_options.fill_cache = false;
+            }
+        } else{
+           Tcl_AppendResult(interp, "unknown option: ", zArg, (char*)0);
+           return TCL_ERROR;
+        }
+      }
 
-      status = db->Get(rocksdb::ReadOptions(), key2, &value2);
+      key2 = rocksdb::Slice(key, key_len);
+
+      status = db->Get(read_options, key2, &value2);
+
       if(!status.ok()) {
         Tcl_AppendResult(interp, "Error: get failed", (char*)0);
         return TCL_ERROR;
@@ -545,12 +565,12 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
     case DBI_PUT: {
       rocksdb::Status status;
       rocksdb::WriteOptions write_options;
-      char *key;
-      char *data;
-      int key_len;
-      int data_len;
-      std::string key2;
-      std::string value2;
+      const char *key = NULL;
+      const char *data = NULL;
+      int key_len = 0;
+      int data_len = 0;
+      rocksdb::Slice key2;
+      rocksdb::Slice value2;
       char *zArg;
       int i = 0;
 
@@ -588,8 +608,8 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
         }
       }
 
-      key2 = key;
-      value2 = data;
+      key2 = rocksdb::Slice(key, key_len);
+      value2 = rocksdb::Slice(data, data_len);
       status = db->Put(write_options, key2, value2);
       if(!status.ok()) {
         Tcl_AppendResult(interp, "Error: put failed", (char*)0);
@@ -603,12 +623,15 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
 
     case DBI_DELETE: {
       rocksdb::Status status;
-      char *key;
-      int key_len;
-      std::string key2;
+      rocksdb::WriteOptions write_options;
+      const char *key = NULL;
+      int key_len = 0;
+      rocksdb::Slice key2;
+      char *zArg;
+      int i = 0;
 
       if( objc < 3 || (objc&1)!=1) {
-        Tcl_WrongNumArgs(interp, 2, objv, "key ");
+        Tcl_WrongNumArgs(interp, 2, objv, "key ?-sync BOOLEAN? ");
         return TCL_ERROR;
       }
 
@@ -618,9 +641,26 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
          return TCL_ERROR;
       }
 
-      key2 = key;
+      for(i=3; i+1<objc; i+=2){
+        zArg = Tcl_GetStringFromObj(objv[i], 0);
 
-      status = db->Delete(rocksdb::WriteOptions(), key2);
+        if( strcmp(zArg, "-sync")==0 ){
+            int b;
+            if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+            if( b ){
+              write_options.sync = true;
+            }else{
+              write_options.sync = false;
+            }
+        } else{
+           Tcl_AppendResult(interp, "unknown option: ", zArg, (char*)0);
+           return TCL_ERROR;
+        }
+      }
+
+      key2 = rocksdb::Slice(key, key_len);
+
+      status = db->Delete(write_options, key2);
       if(!status.ok()) {
         Tcl_AppendResult(interp, "Error: delete failed", (char*)0);
         return TCL_ERROR;
