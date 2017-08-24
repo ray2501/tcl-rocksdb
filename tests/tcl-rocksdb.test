@@ -175,21 +175,44 @@ test rocksdb-2.20 {Close a WrireBatch} {*}{
     -result {0}
 }
 
-test rocksdb-2.21 {Close} {*}{
+test rocksdb-2.21 {Create a Snapshot} {*}{
+    -body {
+    rocksdbi0 snapshot
+    }
+    -result {rockssst0}
+}
+
+test rocksdb-2.22 {Close a Snapshot, wrong parameter} {*}{
+    -body {
+    rockssst0 close -db
+    }
+    -returnCodes error
+    -match glob
+    -result {wrong # args*}
+}
+
+test rocksdb-2.23 {Close a Snapshot} {*}{
+    -body {
+    rockssst0 close -db rocksdbi0
+    }
+    -result {0}
+}
+
+test rocksdb-2.24 {Close} {*}{
     -body {
     rocksdbi0 close
     }
     -result {0}
 }
 
-test rocksdb-2.22 {Open with read only} {*}{
+test rocksdb-2.25 {Open with read only} {*}{
     -body {
     rocksdb open -path "./rocksdbtest" -readonly 1
     }
     -result {rocksdbi1}
 }
 
-test rocksdb-2.23 {Close and Destroy} {*}{
+test rocksdb-2.26 {Close and Destroy} {*}{
     -body {
     rocksdbi1 close
     rocksdb destroy "./rocksdbtest"
