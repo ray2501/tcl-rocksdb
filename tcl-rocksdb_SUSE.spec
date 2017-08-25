@@ -12,7 +12,9 @@ Source:        %name-%version.tar.gz
 URL:           https://github.com/ray2501/tcl-rocksdb
 BuildRequires: autoconf
 BuildRequires: make
+BuildRequires: gcc-c++
 BuildRequires: librocksdb-devel
+BuildRequires: libstdc++-devel
 BuildRequires: tcl-devel >= 8.5
 Requires:      tcl >= 8.5
 BuildRoot:     %{buildroot}
