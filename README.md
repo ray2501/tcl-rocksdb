@@ -23,7 +23,7 @@ tcl-rocksdb is Licensed under Apache License, Version 2.0.
 UNIX BUILD
 =====
 
-I only test on openSUSE LEAP 42.3 and Ubuntu 14.04.
+I only test on openSUSE LEAP 42.3/15.0 and Ubuntu 14.04.
 
 The first step is to build RocksDB shared library and install.
 RocksDB depends on newer gcc/clang with C++11 support.

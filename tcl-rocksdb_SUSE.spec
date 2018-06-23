@@ -4,8 +4,8 @@
 
 Name:          tcl-rocksdb
 Summary:       Tcl interface for RocksDB
-Version:       0.3
-Release:       1
+Version:       0.3.1
+Release:       0
 License:       Apache License, Version 2.0
 Group:         Development/Libraries/Tcl
 Source:        %name-%version.tar.gz
