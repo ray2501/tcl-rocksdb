@@ -58,6 +58,14 @@ below is an example:
     $ make
     $ make install
 
+Notice:  
+If you meet `TLS error: cannot allocate memory in static TLS block` issue,
+the root cause is [jemalloc issue](https://github.com/jemalloc/jemalloc/issues/1237).
+
+The quick solution is to set RocksDB jemalloc option to off (-DWITH_JEMALLOC:BOOL=OFF).
+Or if you can re-build jemalloc and RocksDB by yourself, you can try add 
+option --disable-initial-exec-tls with jemalloc.
+
 
 Implement commands
 =====
