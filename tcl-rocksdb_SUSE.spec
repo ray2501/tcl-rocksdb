@@ -13,7 +13,7 @@ URL:           https://github.com/ray2501/tcl-rocksdb
 BuildRequires: autoconf
 BuildRequires: make
 BuildRequires: gcc-c++
-BuildRequires: gflags-devel
+BuildRequires: gflags-devel-static
 BuildRequires: rocksdb-devel
 BuildRequires: libstdc++-devel
 BuildRequires: tcl-devel >= 8.5
