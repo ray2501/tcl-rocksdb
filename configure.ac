@@ -75,7 +75,7 @@ TEA_ADD_SOURCES([tclrocksdb.cpp])
 TEA_ADD_HEADERS([])
 TEA_ADD_INCLUDES([])
 TEA_ADD_LIBS([-lrocksdb])
-TEA_ADD_CFLAGS([-std=c++11])
+TEA_ADD_CFLAGS([-std=c++17])
 TEA_ADD_STUB_SOURCES([])
 TEA_ADD_TCL_SOURCES([])
 
