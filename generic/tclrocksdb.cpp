@@ -108,7 +108,7 @@ static int ROCKSDB_SST(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
     case SST_CLOSE: {
       rocksdb::DB* db;
       const char *dbiHandle = NULL;
-      int len = 0;
+      Tcl_Size len = 0;
       char *zArg;
       int i = 0;
       Tcl_HashEntry *dbHashEntryPtr;
@@ -233,8 +233,8 @@ static int ROCKSDB_BAT(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
     case BAT_PUT: {
       const char *key = NULL;
       const char *data = NULL;
-      int key_len = 0;
-      int data_len = 0;
+      Tcl_Size key_len = 0;
+      Tcl_Size data_len = 0;
       rocksdb::Slice key2;
       rocksdb::Slice value2;
 
@@ -265,7 +265,7 @@ static int ROCKSDB_BAT(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
 
     case BAT_DELETE: {
       const char *key = NULL;
-      int key_len = 0;
+      Tcl_Size key_len = 0;
       rocksdb::Slice key2;
 
       if( objc != 3 ) {
@@ -412,7 +412,7 @@ static int ROCKSDB_ITR(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
 
     case ITR_SEEK: {
       const char *key = NULL;
-      int len = 0;
+      Tcl_Size len = 0;
       rocksdb::Slice slice;
 
       if( objc != 3 ){
@@ -637,7 +637,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
       rocksdb::ReadOptions read_options;
       rocksdb::Status status;
       const char *key = NULL;
-      int key_len = 0;
+      Tcl_Size key_len = 0;
       rocksdb::Slice key2;
       std::string value2;
       char *zArg;
@@ -646,7 +646,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
       const rocksdb::Snapshot* shot = NULL;
       Tcl_HashEntry *sstHashEntryPtr;
       const char *sstHandle = NULL;
-      int sst_length = 0;
+      Tcl_Size sst_length = 0;
 
       if( objc < 3 || (objc&1)!=1) {
         Tcl_WrongNumArgs(interp, 2, objv, "key ?-fillCache BOOLEAN? ?-snapshot HANDLE? ");
@@ -717,8 +717,8 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
       rocksdb::WriteOptions write_options;
       const char *key = NULL;
       const char *data = NULL;
-      int key_len = 0;
-      int data_len = 0;
+      Tcl_Size key_len = 0;
+      Tcl_Size data_len = 0;
       rocksdb::Slice key2;
       rocksdb::Slice value2;
       char *zArg;
@@ -775,7 +775,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
       rocksdb::Status status;
       rocksdb::WriteOptions write_options;
       const char *key = NULL;
-      int key_len = 0;
+      Tcl_Size key_len = 0;
       rocksdb::Slice key2;
       char *zArg;
       int i = 0;
@@ -823,7 +823,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
 
     case DBI_EXISTS: {
       char *key;
-      int key_len;
+      Tcl_Size key_len;
       std::string key2;
       std::string value2;
       bool result;
@@ -857,7 +857,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
       rocksdb::Status status;
       Tcl_HashEntry *hashEntryPtr;
       const char *batch_handle = NULL;
-      int length = 0;
+      Tcl_Size length = 0;
 
       if( objc != 3 ) {
         Tcl_WrongNumArgs(interp, 2, objv, "batch_handle ");
@@ -928,7 +928,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
       const rocksdb::Snapshot* shot = NULL;
       Tcl_HashEntry *sstHashEntryPtr;
       const char *sstHandle = NULL;
-      int sst_length = 0;
+      Tcl_Size sst_length = 0;
       char *zArg;
       int i = 0;
 
@@ -1020,9 +1020,9 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
 
     case DBI_GETAPPROXIMATESIZES: {
       const char *start = NULL;
-      int start_len = 0;
+      Tcl_Size start_len = 0;
       const char *limit = NULL;
-      int limit_len = 0;
+      Tcl_Size limit_len = 0;
       rocksdb::Slice start2;
       rocksdb::Slice limit2;
       uint64_t sizes;
@@ -1075,7 +1075,7 @@ static int ROCKSDB_DBI(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*obj
 
     case DBI_GETPROPERTY: {
       const char *key = NULL;
-      int key_len = 0;
+      Tcl_Size key_len = 0;
       rocksdb::Slice property;
       std::string value2;
       bool result;
@@ -1174,7 +1174,7 @@ static int ROCKSDB_MAIN(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*ob
       rocksdb::Status status;
       Tcl_HashEntry *newHashEntryPtr;
       const char *path = NULL;
-      int len;
+      Tcl_Size len;
       char handleName[16 + TCL_INTEGER_SPACE];
       Tcl_Obj *pResultStr = NULL;
       int newvalue;
@@ -1289,7 +1289,7 @@ static int ROCKSDB_MAIN(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*ob
             }
         } else if( strcmp(zArg, "-compression")==0 ){
             const char *compression = NULL;
-            int clength = 0;
+            Tcl_Size clength = 0;
 
             compression = Tcl_GetStringFromObj(objv[i+1], &clength);
             if(!compression || clength <= 0) {
@@ -1363,7 +1363,7 @@ static int ROCKSDB_MAIN(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*ob
       rocksdb::Options options;
       rocksdb::Status status;
       const char *name;
-      int name_len = 0;
+      Tcl_Size name_len = 0;
       std::string name2;
 
       if( objc != 3){
@@ -1401,7 +1401,7 @@ static int ROCKSDB_MAIN(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*ob
       rocksdb::Options options;
       rocksdb::Status status;
       const char *name;
-      int name_len = 0;
+      Tcl_Size name_len = 0;
       std::string name2;
 
       if( objc != 3){
@@ -1477,7 +1477,7 @@ static int ROCKSDB_MAIN(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*ob
 int
 Rocksdb_Init(Tcl_Interp *interp)
 {
-    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
+    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
 	return TCL_ERROR;
     }
 
